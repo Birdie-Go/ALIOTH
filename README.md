@@ -1,9 +1,13 @@
 # ALIOTH
 SYSU编译原理实验5 复杂性度量工具ALIOTH
+
 keyword: ALIOTH Oberon-0 JFlex JAVACUP
 
+
 完成对 Oberon-0 的基本词法、语法、语义分析。
+
 词法分析和语义分析基本上是完整的，语法分析报错的位置也是基本正确的，但报的错误可能会有点奇怪。
+
 ex3 未实现语法和语义分析，如果想补充，直接将 ex4 的动作复制到 ex3 相应位置即可。
 
 TODO LIST：
