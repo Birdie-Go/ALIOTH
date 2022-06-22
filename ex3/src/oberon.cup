@@ -1,0 +1,358 @@
+/* oberon-0 */
+import java_cup.runtime.*;
+import exceptions.*;
+
+parser code {:
+    /** scanner */
+    protected MyScanner s;
+    /**
+     * 使用设计的scanner构造parser
+     * @param s
+     */
+    Parser(MyScanner s) { this.s = s; }
+    /**
+     * get token's line
+     * @return int, token's line
+     */
+    public int getLine() {
+      return s.getLine();
+    }
+    /**
+     * get token's column
+     * @return int, token's column
+     */
+    public int getColumn() {
+      return s.getColumn();
+    }
+    /**
+     * while floor counter
+     */
+    protected int whileCount = 0;
+    /**
+     * if floor counter
+     */
+    protected int ifCount = 0;
+:}
+
+/* define how to connect to the scanner! */
+init with {: s.init(); :};
+scan with {: return s.next_token(); :};
+
+/* Terminals (tokens returned by the scanner). */
+terminal Integer MODULE, BEGIN, END, CONST, TYPE, VAR, PROCEDURE, RECORD, ARRAY, OF;
+terminal Integer WHILE, DO, IF, THEN, ELSIF, ELSE, LEFTMIDPAR, RIGHTMIDPAR;
+terminal Integer SEMI, DOT, EQUAL, COLON, LEFTPAR, RIGHTPAR, COMMA, COLONEQ, NOTEQUAL;
+terminal Integer LESS, LEQ, GREAT, GEQ, ADD, UADD, MINUS, UMINUS, OR, MUL, DIV, MOD, AND, NOT;
+terminal Integer IDENTIFIER, NUMBER, INT, BOOL, READ, WRITE, WRITELN;
+
+/* Non terminals */
+non terminal Integer modulesBlock, beginStatementSequence, declarations;
+non terminal Integer constBlock, identifierExpressions, identifierExpression;
+non terminal Integer typeBlock, identifierTypes, identifierType, varBlock;
+non terminal Integer identifierListTypes, identifierListType, procedureDeclarations;
+non terminal Integer procedureDeclarationBlock, procedureDeclaration, procedureBody;
+non terminal Integer procedureHeading, formalParametersBlock, formalParameters;
+non terminal Integer fpSectionBlock, semiFpSections, semiFpSection, fpSection;
+non terminal Integer varOrNot, types, recordType, semiFieldLists, semiFieldList;
+non terminal Integer fieldListBlock, fieldList, arrayType, identifierList;
+non terminal Integer commaIdentifiers, commaIdentifier, statementSequence;
+non terminal Integer semiStatementBlock, semiStatement, statementBlock, statement;
+non terminal Integer whileStatement, ifStatement, elsifBlocks, elsifBlock;
+non terminal Integer elseBlock, elseStatement, procedureCall, actualParametersBlock;
+non terminal Integer actualParameters, expressionBlock, expressions;
+non terminal Integer commaExpressionBlocks, commaExpressionBlock, assignment;
+non terminal Integer expression, usimpleExpression, simpleExpression, term;
+non terminal Integer factor, selectorBlock, selector, readBlock;
+non terminal Integer writeBlock, writelnBlock;
+
+/* Precedences */
+precedence left ADD, UADD, MINUS, UMINUS, OR, MUL, DIV, MOD, AND;
+
+/* The grammar rules */
+modulesBlock    ::= MODULE IDENTIFIER SEMI
+                        declarations:e1
+                    beginStatementSequence:e2
+                    END IDENTIFIER DOT {: System.out.println(e1+e2); RESULT = e1+e2; :}
+                    ;
+
+beginStatementSequence  ::= BEGIN statementSequence:e {: RESULT = e; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+declarations    ::= constBlock:e1
+                    typeBlock:e2
+                    varBlock:e3
+                    procedureDeclarations:e4 {: RESULT = e1+e2+e3+e4; :}
+                    ;
+
+constBlock  ::= CONST identifierExpressions:e {: RESULT = 5+e; :}
+              | {: RESULT = 0; :}
+                ;
+
+identifierExpressions   ::= identifierExpressions:e1 identifierExpression:e2
+                            {: RESULT = e1+e2; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+identifierExpression    ::= IDENTIFIER EQUAL expression:e SEMI {: RESULT = 1+e; :}
+                            ;
+
+typeBlock   ::= TYPE identifierTypes:e {: RESULT = 10+e; :}
+              | {: RESULT = 0; :}
+                ;
+
+identifierTypes ::= identifierTypes:e1 identifierType:e2 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+identifierType  ::= IDENTIFIER EQUAL types:e SEMI {: RESULT = 1+e; :}
+                    ;
+
+varBlock    ::= VAR identifierListTypes:e {: RESULT = e; :}
+              | {: RESULT = 0; :}
+                ;
+
+identifierListTypes ::= identifierListTypes:e1 identifierListType:e2
+                        {: RESULT = e1+e2; :}
+                      | {: RESULT = 0; :}
+                        ;
+
+identifierListType  ::= identifierList:e1 COLON types:e2 SEMI
+                        {: RESULT = e1+e2; :}
+                        ;
+
+procedureDeclarations   ::= procedureDeclarations:e1 procedureDeclarationBlock:e2
+                            {: RESULT = e1+e2; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+procedureDeclarationBlock   ::= procedureDeclaration:e SEMI {: RESULT = e; :}
+                                ;
+
+procedureDeclaration    ::= procedureHeading:e1 SEMI
+                            procedureBody:e2 {: RESULT = e1+e2; :}
+                            ;
+
+procedureBody   ::= declarations:e1
+                    beginStatementSequence:e2
+                    END IDENTIFIER {: RESULT = e1+e2; :}
+                    ;
+
+procedureHeading    ::= PROCEDURE IDENTIFIER formalParametersBlock:e
+                        {: RESULT = 20+e; :}
+                        ;
+
+formalParametersBlock   ::= formalParameters:e {: RESULT = e; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+formalParameters    ::= fpSectionBlock:e RIGHTPAR {: if (true) throw new MissingLeftParenthesisException(); :}
+                      | LEFTPAR fpSectionBlock:e RIGHTPAR {: RESULT = e; :}
+                        ;
+
+fpSectionBlock  ::= fpSection:e1 semiFpSections:e2 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+semiFpSections  ::= semiFpSections:e1 semiFpSection:e2 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+semiFpSection   ::= SEMI fpSection:e {: RESULT = e; :}
+                    ;
+
+fpSection   ::= varOrNot:e1 identifierList:e2 COLON types:e3
+                {: RESULT = e1+e2+e3; :}
+                ;
+
+varOrNot    ::= VAR {: RESULT = 0; :}
+              | {: RESULT = 0; :}
+                ;
+
+types   ::= IDENTIFIER {: RESULT = 2; :}
+          | arrayType:e {: RESULT = e; :}
+          | recordType:e {: RESULT = e; :}
+          | INT {: RESULT = 1; :}
+          | BOOL {: RESULT = 1; :}
+            ;
+
+recordType  ::= RECORD
+                    fieldListBlock:e1
+                    semiFieldLists:e2
+                END {: RESULT = 3+e1+e2; :}
+                ;
+
+semiFieldLists  ::= semiFieldLists:e1 semiFieldList:e2 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+semiFieldList   ::= SEMI fieldListBlock:e {: RESULT = e; :}
+                    ;
+
+fieldListBlock  ::= fieldList:e {: RESULT = e; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+fieldList   ::= identifierList:e1 COLON types:e2 {: RESULT = e1+e2; :}
+                ;
+
+arrayType   ::= ARRAY expression:e1 OF types:e2 {: RESULT = 8+e1+e2; :}
+                ;
+
+identifierList  ::= IDENTIFIER commaIdentifiers:e {: RESULT = 1+e; :}
+                    ;
+
+commaIdentifiers    ::= commaIdentifiers:e1 commaIdentifier:e2
+                        {: RESULT = e1+e2; :}
+                      | {: RESULT = 0; :}
+                        ;
+
+commaIdentifier ::= COMMA IDENTIFIER {: RESULT = 1; :}
+                    ;
+
+statementSequence   ::= statementBlock:e1 semiStatementBlock:e2 {: RESULT = e1+e2; :}
+                        ;
+
+semiStatementBlock ::= semiStatementBlock:e1 semiStatement:e2 {: RESULT = e1+e2; :}
+                      | {: RESULT = 0; :}
+                        ;
+
+semiStatement  ::= SEMI statementBlock:e {: RESULT = e; :}
+                    ;
+
+statementBlock  ::= statement:e {: RESULT = e; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+statement   ::= assignment:e {: RESULT = e; :}
+              | procedureCall:e {: RESULT = e; :}
+              | ifStatement:e {: RESULT = e; :}
+              | whileStatement:e {: RESULT = e; :}
+              | readBlock:e {: RESULT = e; :}
+              | writeBlock:e {: RESULT = e; :}
+              | writelnBlock:e {: RESULT = e; :}
+                ;
+
+readBlock ::= READ actualParametersBlock:e
+              {: RESULT = 8 * (1 + ifCount) * (1 << whileCount) + e; :}
+              ;
+
+writeBlock  ::= WRITE actualParametersBlock:e {: RESULT = 8 * (1 + ifCount) * (1 << whileCount) + e; :}
+                ;
+
+writelnBlock::= WRITELN actualParametersBlock:e {: RESULT = 8 * (1 + ifCount) * (1 << whileCount) + e; :}
+                ;
+
+whileStatement  ::= WHILE {: whileCount += 1; :} expression:e1 DO 
+                        statementSequence:e2
+                    END {: RESULT = e1+e2; whileCount -= 1; :}
+                    ;
+
+ifStatement ::= IF {: ifCount += 1; :} expression:e1 THEN 
+                    statementSequence:e2
+                elsifBlocks:e3
+                elseBlock:e4
+                END {: RESULT = e1+e2+e3+e4; ifCount -= 1; :}
+                ;
+
+elsifBlocks ::= elsifBlocks:e1 elsifBlock:e2 {: RESULT = e1+e2; :}
+              | {: RESULT = 0; :}
+                ;
+
+elsifBlock  ::= ELSIF expression:e1 THEN
+                    statementSequence:e2 {: RESULT = e1+e2; :}
+                ;
+
+elseBlock   ::= elseStatement:e {: RESULT = e; :}
+              | {: RESULT = 0; :}
+                ;
+
+elseStatement   ::= ELSE
+                        statementSequence:e {: RESULT = e; :}
+                    ;
+
+procedureCall   ::= IDENTIFIER actualParametersBlock:e {: RESULT = 8 * (1 + ifCount) * (1 << whileCount) + e; :}
+                    ;
+
+actualParametersBlock   ::= actualParameters:e {: RESULT = e; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+actualParameters    ::= LEFTPAR expressionBlock:e {: if (true) throw new MissingRightParenthesisException(); :}
+                      | LEFTPAR expressionBlock:e RIGHTPAR {: RESULT = e; :} 
+                        ;
+
+expressionBlock ::= expressions:e {: RESULT = e; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+expressions ::= expression:e1 commaExpressionBlocks:e2 {: RESULT = e1+e2; :}
+                ;
+
+commaExpressionBlocks   ::= commaExpressionBlocks:e1 commaExpressionBlock:e2
+                            {: RESULT = e1+e2; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+commaExpressionBlock    ::= COMMA expression:e {: RESULT = e; :}
+                            ;
+
+assignment  ::= IDENTIFIER selectorBlock:e1 COLONEQ expression:e2
+                {: RESULT = (e1+2) * (1 + ifCount) * (1 << whileCount) + e2; :}
+                ;
+
+expression  ::= usimpleExpression:e1 EQUAL usimpleExpression:e2 
+              {: RESULT = (e1 + e2 + 4) * (1 + ifCount) * (1 << whileCount); :}
+              | usimpleExpression:e1 NOTEQUAL usimpleExpression:e2 
+              {: RESULT = (e1 + e2 + 4) * (1 + ifCount) * (1 << whileCount); :}
+              | usimpleExpression:e1 LESS usimpleExpression:e2 
+              {: RESULT = (e1 + e2 + 4) * (1 + ifCount) * (1 << whileCount); :}
+              | usimpleExpression:e1 LEQ usimpleExpression:e2 
+              {: RESULT = (e1 + e2 + 4) * (1 + ifCount) * (1 << whileCount); :}
+              | usimpleExpression:e1 GREAT usimpleExpression:e2 
+              {: RESULT = (e1 + e2 + 4) * (1 + ifCount) * (1 << whileCount); :}
+              | usimpleExpression:e1 GEQ usimpleExpression:e2 
+              {: RESULT = (e1 + e2 + 4) * (1 + ifCount) * (1 << whileCount); :}
+              | usimpleExpression:e {: RESULT = e * (1 + ifCount) * (1 << whileCount); :}
+              ;
+
+usimpleExpression   ::= simpleExpression:e {: RESULT = e; :}
+                      | ADD simpleExpression:e {: RESULT = e+2; :}
+                        %prec UADD
+                      | MINUS simpleExpression:e {: RESULT = e+2; :}
+                        %prec UMINUS
+                        ;
+
+simpleExpression   ::= term:e {: RESULT = e; :}
+                      | simpleExpression:e1 ADD simpleExpression:e2 {: RESULT = e1+e2+2; :}
+                      | simpleExpression:e1 MINUS simpleExpression:e2 {: RESULT = e1+e2+2; :}
+                      | simpleExpression:e1 OR simpleExpression:e2 {: RESULT = e1+e2+6; :}
+                        ;
+
+term    ::= term:e1 MUL {: if (true) throw new MissingOperandException(); :}
+          | term:e1 DIV {: if (true) throw new MissingOperandException(); :}
+          | term:e1 MOD {: if (true) throw new MissingOperandException(); :}
+          | term:e1 AND {: if (true) throw new MissingOperandException(); :}
+          | term:e1 MUL term:e2 {: RESULT = e1+e2+4; :}
+          | term:e1 DIV term:e2 {: RESULT = e1+e2+4; :}
+          | term:e1 MOD term:e2 {: RESULT = e1+e2+4; :}
+          | term:e1 AND term:e2 {: RESULT = e1+e2+6; :}
+          | factor:e1 factor:e2 {: if (true) throw  new MissingOperatorException(); :}
+          | factor:e {: RESULT = e; :}
+            ;
+
+factor  ::= IDENTIFIER selectorBlock:e {: RESULT = e; :}
+          | NUMBER {: RESULT = 0; :}
+          // | expression:e RIGHTPAR {: if (true) throw new MissingLeftParenthesisException(); :}
+          | LEFTPAR expression:e RIGHTPAR {: RESULT = 6 + e / (1 + ifCount) / (1 << whileCount); :}
+          | NOT factor:e {: RESULT = 6+e; :}
+            ;
+
+selectorBlock   ::= selectorBlock:e1 selector:e2 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+selector    ::= DOT IDENTIFIER {: RESULT = 2; :}
+              | LEFTMIDPAR expression:e RIGHTMIDPAR {: RESULT = 2 + e / (1 + ifCount) / (1 << whileCount); :}
+                ;
+

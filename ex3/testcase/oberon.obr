@@ -1,0 +1,56 @@
+MODULE oberon ;
+
+    CONST 
+        a = 10 ; 
+        b = 1 > 2 ;
+
+    Type 
+        bool = BOOLEAN ;
+        myRecord = Record
+            num     : INTEGER ;
+            flag    : bool ;
+        END ; 
+
+    (* Greatest Common Divisor *)
+    PROCEDURE gcd ( num1 : INTEGER ; num2 : iNTEGER ) ;
+        Var tmp : iNTEGER ;
+    BEGIN
+        tmp := num1 MOD num2 ;
+
+        while tmp # 0 DO
+            num1 := num2 ;
+            num2 := tmp ;
+            tmp  := num1 MOD num2 ;
+        END ; 
+
+        write(num2) ;
+        writeln
+    END gcd ;
+
+    PROCEDURE sampleProcedure ( VAR threshold : INTEGER ; constFlag : bool ) ;
+        Const arrayLength = 10 ;
+        Var 
+            x , y : INTEGER ;
+            anArray : ARRAY 10 OF myRecord ;
+            i : INTEGER ;
+    BEGIN
+        Read(x) ; Read(y) ;
+        gcd(x , y) ;
+        i  := 0 ;
+        threshold := 05 ;
+        WHILE ~(i >= arrayLength ) DO
+            anArray[i].num :=  ( - i + 10 - arrayLength ) * 2 DIV 2  ;
+            IF (i < threshold) & ( 1 > 2 ) THEN
+                anArray[i].flag := constFlag ;
+            ELSIF ( i # threshold ) THEN
+                anArray[i].flag := constFlag & ( (1 > 2) OR (3 >= 2) )  ;
+            ELSE
+                anArray[i].flag := b  ;
+            END
+        END 
+    END sampleProcedure ; 
+
+BEGIN
+        sampleProcedure( a , b )
+
+END oberon .

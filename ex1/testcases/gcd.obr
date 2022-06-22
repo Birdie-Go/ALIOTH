@@ -1,0 +1,47 @@
+MODULE math;
+    CONST zero = 0;
+    TYPE bool = BOOLEAN;
+
+    (* greatest common divisor *)
+    PROCEDURE gcd(a : INTEGER; b : INTEGER);
+        VAR r : INTEGER;
+    BEGIN
+        r := a MOD b;
+        WHILE r # 0 DO
+            a := b;
+            b := r;
+            r := a MOD b;
+        END;
+        WRITE(b)
+    END gcd;
+
+    (* Factorization prime factor *)
+    PROCEDURE primefactor(a : INTEGER);
+        VAR fac : ARRAY 100 OF RECORD
+                num : INTEGER;
+                is2 : bool
+            END;
+            i, j : INTEGER;
+
+    BEGIN
+        i := 2;
+        j := zero;
+        WHILE ~(a <= 1) DO
+            WHILE a mod i = zero DO
+                j := j + 1;
+                fac[j].num := i;
+                fac[j].is2 := (i = 2);
+                a := a div i
+            END;
+            i := i + 1
+        END;
+        IF (i * j = zero) OR (i = 0) THEN
+            WRITE(ZERO)
+        ELSIF fac[j].is2 & (fac[j].num = 2) THEN
+            gcd(i, j)
+        ELSE
+            write(j)
+        END
+    END primefactor;
+
+END math.

@@ -1,0 +1,34 @@
+MODULE Sample;
+    type 
+        qq = record
+        q:integer;
+        b:boolean;
+        end;
+    var q:boolean;
+    p:integer;
+    a:record
+        a:integer;
+        b:qq;
+        end;
+    c:record
+        a:integer;
+        b:array 100 of array 100 of qq;
+        c:array 100 of array 200 of record
+            q: integer;
+        end;
+        end;
+    b:qq;
+    PROCEDURE Merge(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+        var q:integer;
+        PROCEDURE Mergee(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+            var q:integer;
+            PROCEDURE Mergeee(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+                var q:integer;
+            END Mergeee;
+        END Mergee;
+    END Merge;
+BEGIN
+    a.b.b := q;
+    a.b := b;
+END Sample.
+

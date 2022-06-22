@@ -1,0 +1,62 @@
+MODULE Sample;
+    type 
+        qq = record
+        q:integer;
+        b:boolean;
+        end;
+    var q:boolean;
+    p:integer;
+    a:record
+        a:integer;
+        b:qq;
+        end;
+    c:record
+        a:integer;
+        b:array 100 of array 100 of qq;
+        c:array 100 of array 200 of record
+            q: integer;
+        end;
+    end;
+    b:qq;
+    PROCEDURE Merge(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+        type 
+            qq = record
+                userID:integer;
+                b:boolean;
+            end;
+
+        var 
+            q:integer;
+            a:record
+                    a:integer;
+                    b:qq;
+                end;
+            c:record
+                a:integer;
+                b:array 100 of array 100 of qq;
+                c:array 100 of array 200 of record
+                    q: qq;
+                end;
+            end;
+            b:qq;
+        PROCEDURE Mergee(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+            var q:integer;
+            PROCEDURE Mergeee(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+                var q:integer;
+            BEGIN
+                x3 := r[124];
+            END Mergeee;
+        BEGIN
+            q:=x1;
+        END Mergee;
+
+        BEGIN
+            a.b := b;
+            c.c[21 + 43][43 + 13].q.b := ~(-1245 * 114514 < (12314 MOD 124 + 214));
+            c.c[12-3][b.userID+6].q.userID := 12 + 32 - (-124) * 124 div 45 mod 125 + 32245;
+    END Merge;
+BEGIN
+    a.b.b := q;
+    a.b := b;
+END Sample.
+
