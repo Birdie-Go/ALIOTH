@@ -15,6 +15,10 @@
 <center><b><font size = "5">手工编写递归下降预测分析程序
 
 
+
+
+
+
 ### 1 开发环境与开发工具
 
 #### 1.1 操作系统
@@ -95,7 +99,299 @@ Visual Studio Code + cmd
    identifierExpressions2 ::= identifierExpression identifierExpressions2 | ;
    ```
 
-   
+具体的翻译模式如下，具体动作见代码 `Parser.java`。加上动作足足 1200 行，在此只保留复杂度计算：
+
+```
+modulesBlock    ::= MODULE IDENTIFIER SEMI
+                        declarations:e1
+                    beginStatementSequence:e2
+                    END IDENTIFIER DOT {: System.out.println(e1+e2); RESULT = e1+e2; :}
+                    ;
+
+beginStatementSequence  ::= BEGIN statementSequence:e {: RESULT = e; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+declarations    ::= constBlock:e1
+                    typeBlock:e2
+                    varBlock:e3
+                    procedureDeclarations:e4 {: RESULT = e1+e2+e3+e4; :}
+                    ;
+
+constBlock  ::= CONST identifierExpressions:e {: RESULT = 5+e; :}
+              | {: RESULT = 0; :}
+                ;
+
+identifierExpressions   ::= identifierExpression:e2 identifierExpressions:e1
+                            {: RESULT = e1+e2; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+identifierExpression    ::= IDENTIFIER EQUAL expression:e SEMI {: RESULT = 1+e; :}
+                            ;
+
+typeBlock   ::= TYPE identifierTypes:e {: RESULT = 10+e; :}
+              | {: RESULT = 0; :}
+                ;
+
+identifierTypes ::= identifierType:e2 identifierTypes:e1 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+identifierType  ::= IDENTIFIER EQUAL types:e SEMI {: RESULT = 1+e; :}
+                    ;
+
+varBlock    ::= VAR identifierListTypes:e {: RESULT = e; :}
+              | {: RESULT = 0; :}
+                ;
+
+identifierListTypes ::= identifierListType:e2 identifierListTypes:e1
+                        {: RESULT = e1+e2; :}
+                      | {: RESULT = 0; :}
+                        ;
+
+identifierListType  ::= identifierList:e1 COLON types:e2 SEMI
+                        {: RESULT = e1+e2; :}
+                        ;
+
+procedureDeclarations   ::= procedureDeclarationBlock:e2 procedureDeclarations:e1
+                            {: RESULT = e1+e2; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+procedureDeclarationBlock   ::= procedureDeclaration:e SEMI {: RESULT = e; :}
+                                ;
+
+procedureDeclaration    ::= procedureHeading:e1 SEMI
+                            procedureBody:e2 {: RESULT = e1+e2; :}
+                            ;
+
+procedureBody   ::= declarations:e1
+                    beginStatementSequence:e2
+                    END IDENTIFIER {: RESULT = e1+e2; :}
+                    ;
+
+procedureHeading    ::= PROCEDURE IDENTIFIER formalParametersBlock:e
+                        {: RESULT = 20+e; :}
+                        ;
+
+formalParametersBlock   ::= formalParameters:e {: RESULT = e; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+formalParameters    ::= fpSectionBlock:e RIGHTPAR {: if (true) throw new MissingLeftParenthesisException(); :}
+                      | LEFTPAR fpSectionBlock:e RIGHTPAR {: RESULT = e; :}
+                        ;
+
+fpSectionBlock  ::= fpSection:e1 semiFpSections:e2 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+semiFpSections  ::= semiFpSection:e2 semiFpSections:e1 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+semiFpSection   ::= SEMI fpSection:e {: RESULT = e; :}
+                    ;
+
+fpSection   ::= varOrNot:e1 identifierList:e2 COLON types:e3
+                {: RESULT = e1+e2+e3; :}
+                ;
+
+varOrNot    ::= VAR {: RESULT = 0; :}
+              | {: RESULT = 0; :}
+                ;
+
+types   ::= IDENTIFIER {: RESULT = 2; :}
+          | arrayType:e {: RESULT = e; :}
+          | recordType:e {: RESULT = e; :}
+          | INT {: RESULT = 1; :}
+          | BOOL {: RESULT = 1; :}
+            ;
+
+recordType  ::= RECORD
+                    fieldListBlock:e1
+                    semiFieldLists:e2
+                END {: RESULT = 3+e1+e2; :}
+                ;
+
+semiFieldLists  ::= semiFieldList:e2 semiFieldLists:e1 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+semiFieldList   ::= SEMI fieldListBlock:e {: RESULT = e; :}
+                    ;
+
+fieldListBlock  ::= fieldList:e {: RESULT = e; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+fieldList   ::= identifierList:e1 COLON types:e2 {: RESULT = e1+e2; :}
+                ;
+
+arrayType   ::= ARRAY expression:e1 OF types:e2 {: RESULT = 8+e1+e2; :}
+                ;
+
+identifierList  ::= IDENTIFIER commaIdentifiers:e {: RESULT = 1+e; :}
+                    ;
+
+commaIdentifiers    ::= commaIdentifier:e2 commaIdentifiers:e1
+                        {: RESULT = e1+e2; :}
+                      | {: RESULT = 0; :}
+                        ;
+
+commaIdentifier ::= COMMA IDENTIFIER {: RESULT = 1; :}
+                    ;
+
+statementSequence   ::= statementBlock:e1 semiStatementBlock:e2 {: RESULT = e1+e2; :}
+                        ;
+
+semiStatementBlock ::= semiStatement:e2 semiStatementBlock:e1 {: RESULT = e1+e2; :}
+                      | {: RESULT = 0; :}
+                        ;
+
+semiStatement  ::= SEMI statementBlock:e {: RESULT = e; :}
+                    ;
+
+statementBlock  ::= statement:e {: RESULT = e; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+statement   ::= assignment:e {: RESULT = e; :}
+              | procedureCall:e {: RESULT = e; :}
+              | ifStatement:e {: RESULT = e; :}
+              | whileStatement:e {: RESULT = e; :}
+              | readBlock:e {: RESULT = e; :}
+              | writeBlock:e {: RESULT = e; :}
+              | writelnBlock:e {: RESULT = e; :}
+                ;
+
+readBlock ::= READ actualParametersBlock:e
+              {: RESULT = 8 * (1 + ifCount) * (1 << whileCount) + e; :}
+              ;
+
+writeBlock  ::= WRITE actualParametersBlock:e {: RESULT = 8 * (1 + ifCount) * (1 << whileCount) + e; :}
+                ;
+
+writelnBlock::= WRITELN actualParametersBlock:e {: RESULT = 8 * (1 + ifCount) * (1 << whileCount) + e; :}
+                ;
+
+whileStatement  ::= WHILE {: whileCount += 1; :} expression:e1 DO 
+                        statementSequence:e2
+                    END {: RESULT = e1+e2; whileCount -= 1; :}
+                    ;
+
+ifStatement ::= IF {: ifCount += 1; :} expression:e1 THEN 
+                    statementSequence:e2
+                elsifBlocks:e3
+                elseBlock:e4
+                END {: RESULT = e1+e2+e3+e4; ifCount -= 1; :}
+                ;
+
+elsifBlocks ::= elsifBlock:e2 elsifBlocks:e1 {: RESULT = e1+e2; :}
+              | {: RESULT = 0; :}
+                ;
+
+elsifBlock  ::= ELSIF expression:e1 THEN
+                    statementSequence:e2 {: RESULT = e1+e2; :}
+                ;
+
+elseBlock   ::= elseStatement:e {: RESULT = e; :}
+              | {: RESULT = 0; :}
+                ;
+
+elseStatement   ::= ELSE
+                        statementSequence:e {: RESULT = e; :}
+                    ;
+
+procedureCall   ::= IDENTIFIER actualParametersBlock:e {: RESULT = 8 * (1 + ifCount) * (1 << whileCount) + e; :}
+                    ;
+
+actualParametersBlock   ::= actualParameters:e {: RESULT = e; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+actualParameters    ::= LEFTPAR expressionBlock:e {: if (true) throw new MissingRightParenthesisException(); :}
+                      | LEFTPAR expressionBlock:e RIGHTPAR {: RESULT = e; :} 
+                        ;
+
+expressionBlock ::= expressions:e {: RESULT = e; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+expressions ::= expression:e1 commaExpressionBlocks:e2 {: RESULT = e1+e2; :}
+                ;
+
+commaExpressionBlocks   ::= commaExpressionBlock:e2 commaExpressionBlocks:e1 
+                            {: RESULT = e1+e2; :}
+                          | {: RESULT = 0; :}
+                            ;
+
+commaExpressionBlock    ::= COMMA expression:e {: RESULT = e; :}
+                            ;
+
+assignment  ::= IDENTIFIER selectorBlock:e1 COLONEQ expression:e2
+                {: RESULT = (e1+2) * (1 + ifCount) * (1 << whileCount) + e2; :}
+                ;
+
+expression  ::= usimpleExpression:e1 opUsimpleExpression:e2 
+				{: RESULT = (e1 + e2) * (1 + ifCount) * (1 << whileCount); :}
+
+opUsimpleExpression  ::= EQUAL usimpleExpression:e2 
+              {: RESULT = e2 + 4; :}
+              | NOTEQUAL usimpleExpression:e2 
+              {: RESULT = e2 + 4; :}
+              | LESS usimpleExpression:e2 
+              {: RESULT = e2 + 4; :}
+              | LEQ usimpleExpression:e2 
+              {: RESULT = e2 + 4; :}
+              | GREAT usimpleExpression:e2 
+              {: RESULT = e2 + 4; :}
+              | GEQ usimpleExpression:e2 
+              {: RESULT = e2 + 4; :}
+              | {: RESULT = 0; :}
+              ;
+
+usimpleExpression   ::= simpleExpression:e {: RESULT = e; :}
+                      | ADD simpleExpression:e {: RESULT = e+2; :}
+                        %prec UADD
+                      | MINUS simpleExpression:e {: RESULT = e+2; :}
+                        %prec UMINUS
+                        ;
+
+simpleExpression ::= term:e1 opTerm:e2 {: RESULT = e1 + e2; :}
+
+opTerm   ::= ADD simpleExpression:e2 {: RESULT = e2+2; :}
+           | MINUS simpleExpression:e2 {: RESULT = e2+2; :}
+           | OR simpleExpression:e2 {: RESULT = e2+6; :}
+           | {: RESULT = 0; :}
+           	 ;
+
+term	::= facotr:e1 operTerm:e2 {: RESULT = e1 + e2; :}
+
+operTerm    ::= MUL term:e2 {: RESULT = e2+4; :}
+          	  | DIV term:e2 {: RESULT = e2+4; :}
+          	  | MOD term:e2 {: RESULT = e2+4; :}
+          	  | AND term:e2 {: RESULT = e2+6; :}
+          	  | {: RESULT = 0; :}
+            ;
+
+factor  ::= IDENTIFIER selectorBlock:e {: RESULT = e; :}
+          | NUMBER {: RESULT = 0; :}
+          | LEFTPAR expression:e RIGHTPAR {: RESULT = 6 + e / (1 + ifCount) / (1 << whileCount); :}
+          | NOT factor:e {: RESULT = 6+e; :}
+            ;
+
+selectorBlock   ::= selector:e2 selectorBlock:e1 {: RESULT = e1+e2; :}
+                  | {: RESULT = 0; :}
+                    ;
+
+selector    ::= DOT IDENTIFIER {: RESULT = 2; :}
+              | LEFTMIDPAR expression:e RIGHTMIDPAR {: RESULT = 2 + e / (1 + ifCount) / (1 << whileCount); :}
+                ;
+```
+
+
 
 
 #### 2.2 编写递归下降预测分析程序
@@ -106,7 +402,7 @@ Visual Studio Code + cmd
 >
 > 例如：文法的每一非终结符号应对应着一个递归子程序，开始符号则对应着其中的主程序；由向前看符号（Lookahead）决定分支动作；每一个继承属性对应一个形式参数，所有综合属性对应返回值，子结点的每一属性对应一个局部变量；翻译模式中产生式右部的结终符号、非终结符号与语义动作分别执行匹配、递归调用和嵌入代码等动作。
 
-##### 递归下降预测分析程序
+##### step 1 递归下降预测分析程序框架
 
 假如如下文法：
 $$
@@ -151,7 +447,7 @@ void match(Token tok) throws SyntacticException {
 }
 ```
 
-##### 语法分析
+##### step 2 语法分析
 
 有很多其他的语法错误，由于 `exception` 中并未进行详细分类，因此错误以输出的形式呈现，并抛出语法错误。
 
@@ -161,9 +457,16 @@ void match(Token tok) throws SyntacticException {
 2. 未识别标识符 / 未识别语句；
 3. 缺少运算数 / 运算符 / 左括号 / 右括号。
 
-语法错误可通过 lookahead 判断，期望是否符合预期。
+语法错误可通过 lookahead 判断，在匹配 FIRST 后，即可确定当前的产生式。
 
-##### 语义分析
+1. 如果当前 lookahead 与产生书需求不一致，则会抛出期待 `xxx` 但出现 `yyy` 的错误；
+2. 如果当前 lookahead 与所有待匹配的产生式都不一致，则抛出未识别标识符 / 未识别语句错误；
+3. 在特定情况下：
+   - 当前需要匹配的为运算符但 lookahead 为 factor，则抛出缺少运算符；
+   - 如果当前待匹配的为运算数但 lookahead 为 `END` 或者 `;` 等其他符号，则为缺少运算数；
+   - 缺少左右括号则为期待 括号 但出现 其他符号 的错误
+
+##### step 3 符号表设计
 
 有很多其他的语义错误，由于 `exception` 中并未进行详细分类，因此错误以输出的形式呈现，并抛出语义错误。
 
@@ -175,13 +478,96 @@ void match(Token tok) throws SyntacticException {
 
 说实话，能够进行语义分析，基本上整个代码就可以编译出来了，而不仅仅是计算复杂度。为了进行语义分析，设计了三个主要的模块：变量模块、类型模块、过程模块。**这三个模块可以解决结构体嵌套、过程嵌套、变量声明周期、变量类型匹配、常量分析等语义问题**。
 
-**变量模块**
+给出一个例子，下述讨论均从该例子中描述（该例子感谢我的舍友`@lanly`）：
+
+```
+MODULE Sample;
+    type 
+        qq = record
+        q:integer;
+        b:boolean;
+        end;
+    var q:boolean;
+    p:integer;
+    a:record
+        a:integer;
+        b:qq;
+        end;
+    c:record
+        a:integer;
+        b:array 100 of array 100 of qq;
+        c:array 100 of array 200 of record
+            q: integer;
+        end;
+    end;
+    b:qq;
+    PROCEDURE Merge(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+        type 
+            qq = record
+                userID:integer;
+                b:boolean;
+            end;
+
+        var 
+            q:integer;
+            a:record
+                    a:integer;
+                    b:qq;
+                end;
+            c:record
+                a:integer;
+                b:array 100 of array 100 of qq;
+                c:array 100 of array 200 of record
+                    q: qq;
+                end;
+            end;
+            b:qq;
+        PROCEDURE Mergee(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+            var q:integer;
+            PROCEDURE Mergeee(VAR r,s:ARRAY 100 OF INTEGER;VAR x1,x2,x3:INTEGER);
+                var q:integer;
+            BEGIN
+                x3 := r[124];
+            END Mergeee;
+        BEGIN
+            q:=x1;
+        END Mergee;
+
+        BEGIN
+            a.b := b;
+            c.c[21 + 43][43 + 13].q.b := ~(-1245 * 114514 < (12314 MOD 124 + 214));
+            c.c[12-3][b.userID+6].q.userID := 12 + 32 - (-124) * 124 div 45 mod 125 + 32245;
+    END Merge;
+BEGIN
+    a.b.b := q;
+    a.b := b;
+END Sample.
+```
+
+**step 3.1 过程模块**
+
+一个过程可以定义局部变量和局部过程，同时一个过程具有形式参数。之所以需要设计过程模块，是为了规范变量的声明周期。代码中可能存在相同名称的变量，但是其归属需要对调用链进行分析。
+
+<img src="photo/image-20220621150107772.png" alt="image-20220621150107772" style="zoom:50%;" />
+
+从例子中可以发现，模块 `Sample` 定义了过程 `Merge`，而 `Merge` 定义了子过程 `Mergee`。在 `Sample` 中声明了全局变量 `c` 为一个结构体，而过程 `Mergee` 中声明了局部变量 `c` 为一个数组。这里出现了同名函数，这里就涉及到变量的作用域和生命周期的讨论。
+
+为了解决这个问题，设计了一个过程类，该过程类采用 ArrayList 的形式，记录了在类中声明的变量、类型和子过程。三者都使用引用的方式保存在类中，这样使得整个代码是一个清晰的树状结构。
+
+**step 3.2 变量模块**
 
 `Vars.java` 用于表示一个变量：
 
 <img src="photo/image-20220621145550772.png" alt="image-20220621145550772" style="zoom: 50%;" />
 
-**类型模块**
+为了解决结构体嵌套的问题，变量中记录的变量的类型，是要用引用的形式呈现的。引用有两个好处：
+
+1. 在解析结构体和数组的时候，能够直接通过类型进入该变量的结构体的成员变量中。由于结构体和数组必定是树状结构，这样能够清晰地反应变量的嵌套关系。
+2. 在进行类型比较和匹配的时候，能够直接使用 `=` 匹配。
+
+同时，为了避免对左值进行修改，还记录了变量是否为常量，包括表达式计算的结果，也为左值。
+
+**step 3.3 类型模块**
 
 由于在语义分析时，需要知道变量的类型，因此构建了一个类型模块。之所以需要类型模块细分，是因为在 oberon-0 中，数组和结构体是可以相互嵌套的。也就是说，对于一个 RECORD 类型，其中包含了很多的变量用于表示类型。
 
@@ -193,22 +579,16 @@ void match(Token tok) throws SyntacticException {
 
 通过一个子类型列表，可以保存其中存在的所有类型。该列表可以看作是一个通过邻接链表的形式保存了一个结构体嵌套的**树状结构**。
 
-**过程模块**
+##### step 4 符号表的维护
 
-一个过程可以定义局部变量和局部过程，同时一个过程具有形式参数。之所以需要设计过程模块，是为了规范变量的声明周期。代码中可能存在相同名称的变量，但是其归属需要对调用链进行分析。
-
-<img src="photo/image-20220621150107772.png" alt="image-20220621150107772" style="zoom:50%;" />
-
-**使用**
-
-对于一个模块，记录了四个列表：
+语义分析本质上是对符号表的使用。对于一个模块，记录了四个列表：
 
 - 全局变量表
 - 全局类型表
 - 全局过程表
 - 调用链
 
-调用链即当前所在的语句处于的过程调用链。
+调用链即当前所在的语句处于的过程调用链。**每定义一个过程，则会在调用链的尾部添加该过程。离开该过程后，会在调用链中删除该过程，并将该过程添加进全局变量表。**
 
 对于每一个模块，同样记录了三个列表：
 
@@ -216,11 +596,28 @@ void match(Token tok) throws SyntacticException {
 - 局部类型表
 - 局部过程表
 
-对于过程中的变量，首先从调用链中依次倒序访问各个过程的局部变量表，找到对应的变量。如果调用链中不存在该变量，则在全局变量表中查询。对于过程和类型的查找也是相同的道理。
+**对于新定义的类型和变量，添加进调用链的最后一个过程的变量表和类型表中。如果调用链为空，则添加进全局变量表和全局类型表中。**
 
+**对于查找一个变量，首先从调用链中依次倒序访问各个过程的局部变量表，找到对应的变量。如果调用链中不存在该变量，则在全局变量表中查询。对于过程和类型的查找也是相同的道理。**
 
+##### step 5 语义分析
 
-##### 错误恢复
+1. 匹配参数数目：
+   - 先倒序查找调用链中定义的过程的参数表。
+   - 如果调用链中不存在该过程，则在全局过程表的参数表中查找。
+2. 类型匹配：查找相应变量进行类型比较即可。
+
+##### step 6 UML设计
+
+代码设计与逻辑如下：
+
+![image-20220623001735275](photo/image-20220623001735275.png)
+
+##### step 7 程序编写
+
+将翻译模式转换为代码即可。
+
+##### step 8 错误恢复
 
 以下错误可进行错误恢复，其余错误均为致命错误。
 
@@ -229,7 +626,9 @@ void match(Token tok) throws SyntacticException {
 3. 所有的语义错误；
 4. 部分变量和语句未找到。
 
-##### 测试
+这些错误都不影响代码的分析和执行，打印错误后可继续执行代码。
+
+##### step 9 测试
 
 复杂度测试正确率100%，并测试 `gcd.obr` 并正确。
 
@@ -334,29 +733,13 @@ LR(1) 的分析表的大小为 $\text{BNF's state}\times\text{(terminal+non term
 
 由于两份代码之间的控制变量方面做的不好，因此没有通过实验进行分析。
 
-但是从理论上看，自底向上的代码会比自顶向下的代码速度更快。递归下降预测分析程序需要大量的递归操作，涉及到递归栈的问题。众所周知，递归是一个非常慢的实现方式，不难猜想递归下降预测分析技术会更慢。
+从理论上看，两者的分析速度缺少不好比较。一方面，递归下降预测分析程序需要大量的递归操作，涉及到递归栈的问题。众所周知，递归是一个非常慢的实现方式。另一方面，自底向上的操作涉及到在大规模 DNF 上进行转移，同样速度也不快。
 
-对此，`@lanly` 使用一份 13M 的代码进行了对比实验。实验中，`cup` 生成的 LALR 分析算法执行了 43.46s，而递归下降预测分析代码执行了 14.04s，速度是前者更快，猜想成立。
-
-
-
-### 3 实验体会
-
-其实在一开始看这个实验的时候，并没有觉得实验有多复杂。按照往常的经验，一个实验一般是比较繁琐而不是困难。但是在真正操手这个实验的时候，我发现我还是天真了。
-
-实验一的分析并不复杂，但到了实验二，难度就缓慢上来了。其实现在回想，实验二其实也并不复杂，困难的原因在于，`JFlex` 这个工具在现代用的人比较少，在网络上也鲜有资料。实验本身并不难，但在实验前需要学习一些用的比较少的工具，那是得花费一番功夫。不仅要了解如何使用，为了和 `JAVACUP` 相结合，还需要了解 `JFlex` 和 `JAVACUP` 的原理，对其生成代码的结构和接口有一定认识。
-
-实验三中，构建好翻译模式后，即可进行代码的编写。复杂度的计算颇是花费了一番功夫。一开始怎么也算不对，加之 `CUP` 的调试本身就比较麻烦，花费了很多时间在 debug 上面。计算好复杂度后，更麻烦的地方在于，语法分析和语义分析。在 `JAVACUP` 中，语法分析需要修改翻译模式，使之能够匹配错误的语法。这本身是一件比较困难的事情，但相比之下在自己编写的递归下降预测分析程序中，就没有那么麻烦。
-
-如果正确编写了 `JAVACUP` 代码，递归下降预测分析程序是不复杂的，本质上是异曲同工的。但整个实验最困难的地方在于语义分析。语义分析需要构建符号表，而这个符号表的设计是需要花费一番功夫的。由于过程中可以声明子过程，结构体和数组也可以一直嵌套，因此设计符号表的相对困难的。
-
-实现完成代码后，惊讶地发现，自己对原本理论知识的掌握程度又上升了一个台阶。编译原理是一个理论和实践紧密结合的学科，这句话在这次实验中得到了验证。不得不说，编译原理是很有魅力的一门学科。
-
-这是本学期的最后一个实验，在实验过程中，老师的谆谆教诲不停地在脑海中回响，给我带来了不可磨灭的记忆。感谢老师和助教的辛勤付出。
+对此，`@lanly` 使用一份 13M 的代码进行了对比实验。实验中，`cup` 生成的 LALR 分析算法执行了 11660ms，而递归下降预测分析代码执行了 9876ms，速度是后者更快。很遗憾，鄙人的代码读写性能并不佳，scanner 速度过慢，没有跑出如此完美的数据。当然这不能说明两者的分析速度如何，自能说各有利弊。
 
 
 
-### 4 附件
+### 3 附件
 
 - `gen.bat` 为生成词法分析器脚本，`build.bat` 为编译脚本，`run.bat` 为执行脚本（默认执行`gcd.obr`），`complexty.bat` 为复杂度测试脚本，`testxxx.bat` 为变异程序测试脚本。
 - `readme.txt` 为个人信息和使用接口，`scheme.pdf` 为实验报告。
